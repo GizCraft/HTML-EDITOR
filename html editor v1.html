@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Simple HTML Editor </title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #3498db;
+      --secondary: #9b59b6;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --dark: #1e1f29;
+      --darker: #121218;
+      --light: #ecf0f1;
+      --medium: #7f8c8d;
+      --header-height: 50px;
+      --footer-height: 40px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background-color: var(--darker);
+      color: var(--light);
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    /* Header styles */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15px;
+      height: var(--header-height);
+      background: linear-gradient(135deg, #2c3e50, #1a1a2e);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo h1 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .logo i {
+      color: var(--primary);
+      font-size: 1.5rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--primary), #2980b9);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      min-width: 40px;
+      justify-content: center;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn i {
+      font-size: 0.9rem;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #27ae60);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #c0392b);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, var(--warning), #e67e22);
+    }
+
+    /* Main container */
+    .container {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: #252836;
+      border-bottom: 1px solid #3a3f4b;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      position: relative;
+      background-color: #252836;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      font-size: 0.9rem;
+    }
+
+    .tab.active {
+      background-color: var(--dark);
+      color: var(--primary);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    /* Editor and Preview area */
+    .editor-area {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #editor {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+    }
+
+    .preview-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      display: none;
+    }
+
+    #preview {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background-color: white;
+    }
+
+    /* Console panel */
+    .console-panel {
+      height: 200px;
+      background-color: #1a1a24;
+      border-top: 1px solid #2d2d3a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      display: none;
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 15px;
+      background-color: #252836;
+      border-bottom: 1px solid #3a3f4b;
+    }
+
+    .console-header h3 {
+      font-size: 0.95rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .console-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .console-content {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    .console-log {
+      padding: 5px 0;
+      border-bottom: 1px solid #2d2d3a;
+      color: #bdc3c7;
+    }
+
+    .console-log.error {
+      color: #e74c3c;
+    }
+
+    .console-log.warn {
+      color: #f39c12;
+    }
+
+    .console-log.info {
+      color: #3498db;
+    }
+
+    /* Settings panel */
+    .settings-panel {
+      display: none;
+      padding: 15px;
+      background-color: #252836;
+      overflow-y: auto;
+    }
+
+    .settings-group {
+      margin-bottom: 25px;
+    }
+
+    .settings-group h3 {
+      margin-bottom: 15px;
+      color: var(--secondary);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-group h3 i {
+      font-size: 0.9rem;
+    }
+
+    .setting-item {
+      margin-bottom: 15px;
+    }
+
+    .setting-item label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.85rem;
+      color: #bdc3c7;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #2c3e50;
+      border: 1px solid #3a3f4b;
+      border-radius: 4px;
+      color: white;
+      font-size: 0.85rem;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-container input {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Footer */
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15px;
+      height: var(--footer-height);
+      background: #252836;
+      border-top: 1px solid #3a3f4b;
+      font-size: 0.75rem;
+      color: var(--medium);
+      z-index: 800;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--success);
+    }
+
+    .status-indicator.idle {
+      background-color: var(--warning);
+    }
+
+    .footer-controls {
+      display: flex;
+      gap: 15px;
+    }
+
+    .footer-btn {
+      background: none;
+      border: none;
+      color: #bdc3c7;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: color 0.3s ease;
+    }
+
+    .footer-btn:hover {
+      color: var(--primary);
+    }
+
+    .footer-btn.active {
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* Mobile menu */
+    .mobile-menu {
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #252836;
+      border-top: 1px solid #3a3f4b;
+      padding: 10px;
+      z-index: 1000;
+    }
+
+    .mobile-menu-buttons {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
+
+    .mobile-btn {
+      background: none;
+      border: none;
+      color: #bdc3c7;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      padding: 5px;
+    }
+
+    .mobile-btn.active {
+      color: var(--primary);
+    }
+
+    .mobile-btn i {
+      font-size: 1.2rem;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .btn span {
+        display: none;
+      }
+      
+      .logo h1 {
+        font-size: 1rem;
+      }
+      
+      .tab {
+        padding: 10px 15px;
+        font-size: 0.85rem;
+      }
+      
+      .footer-btn span {
+        display: none;
+      }
+      
+      .footer-controls {
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        --header-height: 45px;
+        --footer-height: 35px;
+      }
+      
+      .logo h1 {
+        font-size: 0.9rem;
+      }
+      
+      .btn {
+        padding: 7px;
+        min-width: 35px;
+      }
+      
+      .tab {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      bottom: 70px;
+      right: 10px;
+      padding: 12px 20px;
+      background: #252836;
+      border-left: 4px solid var(--primary);
+      border-radius: 4px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      z-index: 1200;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateX(150%);
+      transition: transform 0.3s ease;
+      max-width: 90%;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.success {
+      border-left-color: var(--success);
+    }
+
+    .toast.error {
+      border-left-color: var(--danger);
+    }
+
+    .toast.warning {
+      border-left-color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header with controls -->
+  <header>
+    <div class="logo">
+      <i class="fas fa-code"></i>
+      <h1>HTML Editor Simple</h1>
+    </div>
+    <div class="controls">
+      <button class="btn btn-success" id="runBtn">
+        <i class="fas fa-play"></i>
+        <span>Run</span>
+      </button>
+      <button class="btn" id="saveBtn">
+        <i class="fas fa-save"></i>
+        <span>Save</span>
+      </button>
+    </div>
+  </header>
+  
+  <!-- Main container -->
+  <div class="container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="editor">Editor</div>
+      <div class="tab" data-tab="preview">Preview</div>
+      <div class="tab" data-tab="console">Console</div>
+      <div class="tab" data-tab="settings">Settings</div>
+    </div>
+    
+    <!-- Editor area -->
+    <div class="editor-area" id="editorArea">
+      <div id="editor"></div>
+      
+      <!-- Preview area -->
+      <div class="preview-container" id="previewArea">
+        <iframe id="preview"></iframe>
+      </div>
+      
+      <!-- Console area -->
+      <div class="console-panel" id="consoleArea">
+        <div class="console-header">
+          <h3><i class="fas fa-terminal"></i> Console</h3>
+          <div class="console-actions">
+            <button class="btn btn-danger small" id="clearConsoleBtn">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="console-content" id="consoleContent"></div>
+      </div>
+      
+      <!-- Settings area -->
+      <div class="settings-panel" id="settingsArea">
+        <div class="settings-group">
+          <h3><i class="fas fa-paint-brush"></i> Appearance</h3>
+          <div class="setting-item">
+            <label for="themeSelect">Theme:</label>
+            <select id="themeSelect">
+              <option value="monokai">Monokai</option>
+              <option value="github">GitHub</option>
+              <option value="dracula">Dracula</option>
+              <option value="solarized_light">Solarized Light</option>
+              <option value="solarized_dark">Solarized Dark</option>
+              <option value="twilight">Twilight</option>
+              <option value="tomorrow_night">Tomorrow Night</option>
+              <option value="ambiance">Ambiance</option>
+              <option value="chaos">Chaos</option>
+              <option value="cobalt">Cobalt</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="fontSize">Font Size:</label>
+            <input type="number" id="fontSize" min="10" max="24" value="14">
+          </div>
+          <div class="setting-item">
+            <div class="checkbox-container">
+              <input type="checkbox" id="lineNumbers" checked>
+              <label for="lineNumbers">Show Line Numbers</label>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="checkbox-container">
+              <input type="checkbox" id="wrapMode">
+              <label for="wrapMode">Enable Word Wrap</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="settings-group">
+          <h3><i class="fas fa-code"></i> Editor Options</h3>
+          <div class="setting-item">
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoComplete" checked>
+              <label for="autoComplete">Enable Auto Complete</label>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="checkbox-container">
+              <input type="checkbox" id="liveAutocomplete" checked>
+              <label for="liveAutocomplete">Live Autocompletion</label>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="checkbox-container">
+              <input type="checkbox" id="snippets" checked>
+              <label for="snippets">Enable Snippets</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="settings-group">
+          <h3><i class="fas fa-save"></i> Data Management</h3>
+          <button class="btn" id="exportBtn" style="width: 100%; margin-bottom: 10px;">
+            <i class="fas fa-download"></i> Export Code
+          </button>
+          <button class="btn" id="importBtn" style="width: 100%;">
+            <i class="fas fa-upload"></i> Import Code
+          </button>
+          <div class="setting-item" style="margin-top: 15px;">
+            <div class="checkbox-container">
+              <input type="checkbox" id="autoSave" checked>
+              <label for="autoSave">Auto Save Changes</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer>
+    <div class="status">
+      <div class="status-indicator"></div>
+      <span id="statusText">Ready</span>
+    </div>
+    <div class="footer-controls">
+      <button class="footer-btn" id="themeBtn">
+        <i class="fas fa-moon"></i>
+        <span>Theme</span>
+      </button>
+      <button class="footer-btn" id="fullscreenBtn">
+        <i class="fas fa-expand"></i>
+        <span>Fullscreen</span>
+      </button>
+    </div>
+  </footer>
+  
+  <!-- Mobile menu -->
+  <div class="mobile-menu">
+    <div class="mobile-menu-buttons">
+      <button class="mobile-btn active" data-tab="editor">
+        <i class="fas fa-edit"></i>
+        <span>Editor</span>
+      </button>
+      <button class="mobile-btn" data-tab="preview">
+        <i class="fas fa-eye"></i>
+        <span>Preview</span>
+      </button>
+      <button class="mobile-btn" data-tab="console">
+        <i class="fas fa-terminal"></i>
+        <span>Console</span>
+      </button>
+      <button class="mobile-btn" data-tab="settings">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Toast container -->
+  <div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">Action completed successfully</span>
+  </div>
+  
+  <!-- Ace Editor -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-emmet.min.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize editor
+      const editor = ace.edit("editor");
+      editor.setTheme("ace/theme/monokai");
+      editor.session.setMode("ace/mode/html");
+      
+      // Set initial content
+      const initialContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Mobile Code Editor</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background-color: #f8f9fa;
+      color: #333;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>HTML Editor</h1>
+      <p>Simple Editor Use Html+css+js only</p>
+    </header>
+      
+  
+  <script>
+console.log("console test")
+  <\/script>
+</body>
+</html>`;
+      
+      editor.session.setValue(initialContent);
+      editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableLiveAutocompletion: true,
+        enableSnippets: true,
+        enableEmmet: true,
+        wrap: true,
+        fontSize: "14px",
+        behavioursEnabled: true
+      });
+
+      // Initialize UI elements
+      const themeSelect = document.getElementById('themeSelect');
+      const fontSizeInput = document.getElementById('fontSize');
+      const lineNumbersCheck = document.getElementById('lineNumbers');
+      const wrapModeCheck = document.getElementById('wrapMode');
+      const autoCompleteCheck = document.getElementById('autoComplete');
+      const liveAutocompleteCheck = document.getElementById('liveAutocomplete');
+      const snippetsCheck = document.getElementById('snippets');
+      const autoSaveCheck = document.getElementById('autoSave');
+      const runBtn = document.getElementById('runBtn');
+      const saveBtn = document.getElementById('saveBtn');
+      const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const importBtn = document.getElementById('importBtn');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      const statusText = document.getElementById('statusText');
+      const preview = document.getElementById('preview');
+      const consoleContent = document.getElementById('consoleContent');
+      const tabs = document.querySelectorAll('.tab');
+      const mobileBtns = document.querySelectorAll('.mobile-btn');
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+
+      // Show toast notification
+      function showToast(message, type = '') {
+        toastMessage.textContent = message;
+        toast.className = 'toast show';
+        
+        if (type) {
+          toast.classList.add(type);
+        }
+        
+        setTimeout(() => {
+          toast.className = 'toast';
+          if (type) {
+            toast.classList.remove(type);
+          }
+        }, 3000);
+      }
+
+      // Add console log
+      function addConsoleLog(message, type = '') {
+        const logElement = document.createElement('div');
+        logElement.className = `console-log ${type}`;
+        logElement.textContent = message;
+        consoleContent.appendChild(logElement);
+        consoleContent.scrollTop = consoleContent.scrollHeight;
+      }
+
+      // Update preview
+      function updatePreview() {
+        const code = editor.getValue();
+        const doc = preview.contentDocument || preview.contentWindow.document;
+        doc.open();
+        doc.write(code);
+        doc.close();
+        addConsoleLog('> Preview updated', 'info');
+        showToast('Preview updated', 'success');
+      }
+
+      // Switch tabs
+      function switchTab(tabName) {
+        // Hide all areas
+        document.getElementById('editor').style.display = 'none';
+        document.getElementById('previewArea').style.display = 'none';
+        document.getElementById('consoleArea').style.display = 'none';
+        document.getElementById('settingsArea').style.display = 'none';
+        
+        // Show selected area
+        if (tabName === 'editor') {
+          document.getElementById('editor').style.display = 'block';
+        } else if (tabName === 'preview') {
+          document.getElementById('previewArea').style.display = 'flex';
+          updatePreview();
+        } else if (tabName === 'console') {
+          document.getElementById('consoleArea').style.display = 'flex';
+        } else if (tabName === 'settings') {
+          document.getElementById('settingsArea').style.display = 'block';
+        }
+        
+        // Update active tab
+        tabs.forEach(tab => {
+          tab.classList.remove('active');
+          if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+          }
+        });
+        
+        // Update active mobile button
+        mobileBtns.forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.dataset.tab === tabName) {
+            btn.classList.add('active');
+          }
+        });
+      }
+
+      // Load settings from localStorage
+      function loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('editorSettings') || '{}');
+        
+        if (settings.theme) {
+          editor.setTheme("ace/theme/" + settings.theme);
+          themeSelect.value = settings.theme;
+        }
+        
+        if (settings.fontSize) {
+          editor.setFontSize(settings.fontSize + "px");
+          fontSizeInput.value = settings.fontSize;
+        }
+        
+        if (settings.lineNumbers !== undefined) {
+          editor.renderer.setOption("showLineNumbers", settings.lineNumbers);
+          lineNumbersCheck.checked = settings.lineNumbers;
+        }
+        
+        if (settings.wrapMode !== undefined) {
+          editor.session.setUseWrapMode(settings.wrapMode);
+          wrapModeCheck.checked = settings.wrapMode;
+        }
+        
+        if (settings.autoComplete !== undefined) {
+          editor.setOptions({
+            enableBasicAutocompletion: settings.autoComplete
+          });
+          autoCompleteCheck.checked = settings.autoComplete;
+        }
+        
+        if (settings.liveAutocomplete !== undefined) {
+          editor.setOptions({
+            enableLiveAutocompletion: settings.liveAutocomplete
+          });
+          liveAutocompleteCheck.checked = settings.liveAutocomplete;
+        }
+        
+        if (settings.snippets !== undefined) {
+          editor.setOptions({
+            enableSnippets: settings.snippets
+          });
+          snippetsCheck.checked = settings.snippets;
+        }
+        
+        if (settings.autoSave !== undefined) {
+          autoSaveCheck.checked = settings.autoSave;
+        }
+        
+        if (settings.content) {
+          editor.session.setValue(settings.content);
+        }
+        
+        updatePreview();
+        addConsoleLog('> Settings loaded', 'info');
+      }
+
+      // Save settings to localStorage
+      function saveSettings() {
+        const settings = {
+          theme: themeSelect.value,
+          fontSize: parseInt(fontSizeInput.value),
+          lineNumbers: lineNumbersCheck.checked,
+          wrapMode: wrapModeCheck.checked,
+          autoComplete: autoCompleteCheck.checked,
+          liveAutocomplete: liveAutocompleteCheck.checked,
+          snippets: snippetsCheck.checked,
+          autoSave: autoSaveCheck.checked,
+          content: autoSaveCheck.checked ? editor.getValue() : undefined
+        };
+        
+        localStorage.setItem('editorSettings', JSON.stringify(settings));
+        showToast('Settings saved', 'success');
+        addConsoleLog('> Settings saved', 'info');
+      }
+
+      // Initialize event listeners
+      function initEventListeners() {
+        // Theme change
+        themeSelect.addEventListener('change', () => {
+          editor.setTheme("ace/theme/" + themeSelect.value);
+          saveSettings();
+          addConsoleLog(`> Theme changed to ${themeSelect.value}`, 'info');
+        });
+
+        // Run button
+        runBtn.addEventListener('click', () => {
+          updatePreview();
+          addConsoleLog('> Code executed', 'info');
+        });
+
+        // Save button
+        saveBtn.addEventListener('click', () => {
+          saveSettings();
+        });
+
+        // Clear console
+        clearConsoleBtn.addEventListener('click', () => {
+          consoleContent.innerHTML = '';
+          addConsoleLog('> Console cleared', 'info');
+        });
+
+        // Export code
+        exportBtn.addEventListener('click', () => {
+          const code = editor.getValue();
+          const blob = new Blob([code], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'code.txt';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('Code exported', 'success');
+          addConsoleLog('> Code exported', 'info');
+        });
+
+        // Import code
+        importBtn.addEventListener('click', () => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.txt,.html,.css,.js,.json,.xml,.md,.php';
+          input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              editor.session.setValue(e.target.result);
+              saveSettings();
+              showToast('Code imported', 'success');
+              addConsoleLog('> Code imported', 'info');
+            };
+            reader.readAsText(file);
+          };
+          input.click();
+        });
+
+        // Fullscreen
+        fullscreenBtn.addEventListener('click', () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+          } else {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+              fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            }
+          }
+        });
+
+        // Font size
+        fontSizeInput.addEventListener('change', () => {
+          editor.setFontSize(fontSizeInput.value + "px");
+          saveSettings();
+          addConsoleLog(`> Font size changed to ${fontSizeInput.value}px`, 'info');
+        });
+
+        // Editor options
+        lineNumbersCheck.addEventListener('change', () => {
+          editor.renderer.setOption("showLineNumbers", lineNumbersCheck.checked);
+          saveSettings();
+          addConsoleLog(`> Line numbers ${lineNumbersCheck.checked ? 'enabled' : 'disabled'}`, 'info');
+        });
+
+        wrapModeCheck.addEventListener('change', () => {
+          editor.session.setUseWrapMode(wrapModeCheck.checked);
+          saveSettings();
+          addConsoleLog(`> Word wrap ${wrapModeCheck.checked ? 'enabled' : 'disabled'}`, 'info');
+        });
+
+        autoCompleteCheck.addEventListener('change', () => {
+          editor.setOptions({
+            enableBasicAutocompletion: autoCompleteCheck.checked
+          });
+          saveSettings();
+          addConsoleLog(`> Auto-complete ${autoCompleteCheck.checked ? 'enabled' : 'disabled'}`, 'info');
+        });
+        
+        liveAutocompleteCheck.addEventListener('change', () => {
+          editor.setOptions({
+            enableLiveAutocompletion: liveAutocompleteCheck.checked
+          });
+          saveSettings();
+          addConsoleLog(`> Live autocomplete ${liveAutocompleteCheck.checked ? 'enabled' : 'disabled'}`, 'info');
+        });
+        
+        snippetsCheck.addEventListener('change', () => {
+          editor.setOptions({
+            enableSnippets: snippetsCheck.checked
+          });
+          saveSettings();
+          addConsoleLog(`> Snippets ${snippetsCheck.checked ? 'enabled' : 'disabled'}`, 'info');
+        });
+
+        // Auto-save
+        autoSaveCheck.addEventListener('change', saveSettings);
+
+        // Tabs
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            switchTab(tab.dataset.tab);
+          });
+        });
+
+        // Mobile buttons
+        mobileBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            switchTab(btn.dataset.tab);
+          });
+        });
+
+        // Editor content change
+        editor.session.on('change', () => {
+          if (autoSaveCheck.checked) {
+            saveSettings();
+          }
+        });
+      }
+
+      // Initialize the editor
+      loadSettings();
+      initEventListeners();
+      updatePreview();
+      
+      // Add initial console logs
+      setTimeout(() => {
+        addConsoleLog('> Editor initialized', 'info');
+        addConsoleLog('> Ready to code', '');
+      }, 500);
+      
+      // Set up console capture from iframe
+      const previewWindow = preview.contentWindow;
+      previewWindow.console.log = function(message) {
+        addConsoleLog(`> ${message}`, '');
+      };
+      
+      previewWindow.console.error = function(message) {
+        addConsoleLog(`> [ERROR] ${message}`, 'error');
+      };
+      
+      previewWindow.console.warn = function(message) {
+        addConsoleLog(`> [WARN] ${message}`, 'warn');
+      };
+      
+      previewWindow.console.info = function(message) {
+        addConsoleLog(`> [INFO] ${message}`, 'info');
+      };
+    });
+  </script>
+</body>
+</html>
